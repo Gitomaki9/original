@@ -121,7 +121,7 @@
           <div class="columna">
             <div class="campo">
               <label for="fecha"><i class="fa-solid fa-calendar"></i> Fecha *</label>
-              <input type="date" id="fecha" required value="<?php echo date('Y-m-d'); ?>">
+              <input type="date" id="fecha" required>
             </div>
             
             <div class="campo">
@@ -260,10 +260,11 @@
   <!-- SCRIPT PRINCIPAL -->
   <script>
     // ==================== CONFIGURACIÓN SUPABASE ====================
-    // ¡REEMPLAZA ESTOS VALORES CON LOS DE TU PROYECTO!
-    const SUPABASE_URL = grchvnewfkakaqfkgbzy; // Tu Project URL de Supabase
-    const SUPABASE_KEY = sb_publishable_bQZ1guTH9D2ByDwgMYGLfQ_g7bIsktc; // Tu anon public key
-    
+    // ==================== CONFIGURACIÓN SUPABASE ====================
+    // ¡REEMPLAZA CON TUS DATOS EXACTOS (CON COMILLAS!)!
+    const SUPABASE_URL = 'https://grchvnewfkakaqfkgbzy.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_bQZ1guTH9D2ByDwgMYGLfQ_g7bIsktc';
+    // ================================================================
     // Crear cliente de Supabase
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
