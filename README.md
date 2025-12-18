@@ -2,7 +2,6 @@
 Sistema de Información Web para Reporte y Seguimiento de Incidencias de Tránsito Vehicular en Cusco
 
 ---
-
 ## Estructura del proyecto
 
 <br> Cusco Reporta/ <br> ├── assets/ <br> │ └── images/ <br> ├── js/ <br> ├── css/ <br> └── html/ <br>
@@ -21,8 +20,6 @@ Sistema de Información Web para Reporte y Seguimiento de Incidencias de Tránsi
 
 - **`html/`**  
   Carpeta que contiene todos los archivos HTML, que representan la estructura y contenido de las páginas web del proyecto.
-
----
 
 ## Cómo ejecutar el proyecto
 
