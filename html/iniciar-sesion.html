@@ -6,9 +6,6 @@
   <title>Iniciar Sesión - Cusco Reporta</title>
   <link rel="stylesheet" href="../css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- 1. Primero incluir la librería de Supabase -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <!-- ======= HEADER ======= -->
@@ -34,182 +31,70 @@
         INICIO DE SESIÓN
       </h1>
 
-      <!-- Botones -->
+      <!-- BOTONES CORREGIDOS -->
       <div style="display: flex; margin: 30px auto; justify-content: center; gap: 0;">
+        <!-- Botón "Iniciar Sesión" (se queda como está) -->
         <button style="background-color: #b22222; border: none; padding: 10px 20px; border-radius: 20px 0 0 20px; color: white; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: default;">
           <span></span> Iniciar Sesión
         </button>
-        <!-- Botón convertido en enlace -->
+        
+        <!-- ENLACE "Registrarse" (esto es lo que cambia) -->
         <a href="registro_usuario.html" 
            style="background-color: #c43d3d; border: none; padding: 10px 20px; border-radius: 0 20px 20px 0; color: white; font-weight: 600; display: flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer;">
           Registrarse <span></span>
         </a>
       </div>
 
-      <!-- Mensaje de error -->
-      <div id="error-message" style="display: none; background: #ffebee; color: #c00; padding: 12px; border-radius: 8px; margin: 20px auto; max-width: 400px; text-align: center;">
-      </div>
-
       <!-- Formulario -->
-      <form id="loginForm" style="max-width: 400px; margin: 0 auto;">
-        <label for="email" style="display: block; font-weight: 600; margin-bottom: 8px;">Correo Electrónico</label>
-        <input type="email" id="email" name="email"
-          style="width: 100%; padding: 12px; background-color: #c43d3d; border: none; border-radius: 20px; margin-bottom: 20px; color: white; text-align: center; font-weight: 600;"
-          placeholder="ejemplo@correo.com" required />
+      <form style="max-width: 400px; margin: 0 auto;">
+        <label for="username" style="display: block; font-weight: 600; margin-bottom: 8px;">Nombre de Usuario</label>
+        <input type="text" id="username" name="username"
+          style="width: 100%; padding: 12px; background-color: #c43d3d; border: none; border-radius: 20px; margin-bottom: 20px; color: white; text-align: center; font-weight: 600;" />
 
         <label for="password" style="display: block; font-weight: 600; margin-bottom: 8px;">Contraseña</label>
         <input type="password" id="password" name="password"
-          style="width: 100%; padding: 12px; background-color: #c43d3d; border: none; border-radius: 20px; margin-bottom: 20px; color: white; text-align: center; font-weight: 600;"
-          placeholder="••••••••" required />
+          style="width: 100%; padding: 12px; background-color: #c43d3d; border: none; border-radius: 20px; margin-bottom: 20px; color: white; text-align: center; font-weight: 600;" />
         
         <!-- BOTÓN DE INICIAR SESIÓN -->
-        <button type="submit" class="boton red" style="margin-top: 20px; width: 100%; padding: 12px; font-size: 16px;">
-          Iniciar Sesión
-        </button>
+        <button type="submit" class="boton red" style="margin-top: 20px;">Iniciar Sesión</button>
       </form>
 
       <!-- Botón de recuperar contraseña -->
-      <a href="recuperar_contrasena.html" style="display: block; text-align: center; margin-top: 20px; padding: 12px 24px; border-radius: 20px; background-color: white; color: #c43d3d; font-weight: 600; text-decoration: none; max-width: 400px; margin-left: auto; margin-right: auto;">
-        ¿Olvidaste tu contraseña?
+      <a href="recuperar_contrasena.html" style="display: inline-block; text-align: center; margin-top: 20px; padding: 12px 24px; border-radius: 20px; background-color: white; color: #c43d3d ; font-weight: 600; text-decoration: none;">
+        Recuperar contraseña
       </a>
 
-      <p class="confia" style="text-align: center; margin-top: 30px; font-weight: 600; color: #333;">
-        ¡CONFÍA EN NOSOTROS!
-      </p>
+      <p class="confia">¡CONFÍA EN NOSOTROS!</p>
     </section>
   </main>
 
-  <!-- 2. Incluir tu archivo supabase.js (que ya tiene la configuración) -->
-  <script src="../js/supabase.js"></script>
+  <script src="../js/main.js"></script>
   
-  <!-- 3. Código específico para login -->
+  <!-- Prueba rápida para ver si el enlace funciona -->
   <script>
-    // Función para mostrar errores
-    function mostrarError(mensaje) {
-      const errorDiv = document.getElementById('error-message');
-      if (errorDiv) {
-        errorDiv.textContent = mensaje;
-        errorDiv.style.display = 'block';
-        setTimeout(() => {
-          errorDiv.style.display = 'none';
-        }, 5000);
-      }
-    }
+    console.log('Página de login cargada');
+    console.log('El enlace "Registrarse" debe llevar a: registro_usuario.html');
     
-    // Función para iniciar sesión
-    async function iniciarSesion(email, password) {
-      try {
-        // Usar el cliente Supabase que ya configuraste en supabase.js
-        const supabase = window.supabaseClient;
-        
-        if (!supabase) {
-          mostrarError('Error: Supabase no está configurado');
-          return false;
-        }
-        
-        console.log('Intentando login con:', email);
-        
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email,
-          password: password
-        });
-        
-        if (error) {
-          console.error('Error en login:', error);
-          
-          // Mensajes de error más amigables
-          if (error.message.includes('Invalid login credentials')) {
-            mostrarError('Correo o contraseña incorrectos');
-          } else if (error.message.includes('Email not confirmed')) {
-            mostrarError('Por favor verifica tu correo electrónico primero');
-          } else {
-            mostrarError('Error: ' + error.message);
-          }
-          return false;
-        }
-        
-        // Login exitoso
-        console.log('✅ Login exitoso:', data.user);
-        
-        // Redirigir al inicio
-        window.location.href = '../index.html';
-        return true;
-        
-      } catch (error) {
-        console.error('Error de conexión:', error);
-        mostrarError('Error de conexión con el servidor');
-        return false;
-      }
-    }
-    
-    // Cuando el DOM esté cargado
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('Página de login cargada');
-      
-      // Verificar si ya está logueado
-      async function verificarSesionActiva() {
-        try {
-          const supabase = window.supabaseClient;
-          if (!supabase) return;
-          
-          const { data } = await supabase.auth.getSession();
-          console.log('Sesión actual:', data.session);
-          
-          if (data.session) {
-            // Ya está logueado, redirigir a inicio
-            window.location.href = '../index.html';
-          }
-        } catch (error) {
-          console.log('No hay sesión activa o error:', error);
-        }
-      }
-      
-      verificarSesionActiva();
-      
-      // Manejar el formulario
-      const form = document.getElementById('loginForm');
-      
-      if (form) {
-        form.addEventListener('submit', async function(e) {
-          e.preventDefault(); // Evitar envío normal
-          
-          const email = document.getElementById('email').value.trim();
-          const password = document.getElementById('password').value;
-          
-          console.log('Formulario enviado:', { email, password });
-          
-          // Validaciones básicas
-          if (!email || !password) {
-            mostrarError('Por favor completa todos los campos');
-            return;
-          }
-          
-          // Validar formato de email
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            mostrarError('Por favor ingresa un correo válido');
-            return;
-          }
-          
-          // Deshabilitar botón mientras procesa
-          const submitBtn = form.querySelector('button[type="submit"]');
-          const originalText = submitBtn.textContent;
-          submitBtn.textContent = 'Iniciando sesión...';
-          submitBtn.disabled = true;
-          
-          // Intentar login
-          const resultado = await iniciarSesion(email, password);
-          
-          if (!resultado) {
-            // Restaurar botón solo si falló
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-          }
-          // Si fue exitoso, no restaurar porque se redirige
-        });
+    // Verificar que el enlace existe
+    setTimeout(() => {
+      const enlaceRegistro = document.querySelector('a[href="registro_usuario.html"]');
+      if (enlaceRegistro) {
+        console.log('✅ Enlace de registro encontrado:', enlaceRegistro);
       } else {
-        console.error('No se encontró el formulario con id="loginForm"');
+        console.error('❌ No se encontró el enlace de registro');
+        // Crear el enlace automáticamente si no existe
+        const botonRegistro = document.querySelector('button:nth-child(2)');
+        if (botonRegistro) {
+          const nuevoEnlace = document.createElement('a');
+          nuevoEnlace.href = 'registro_usuario.html';
+          nuevoEnlace.innerHTML = botonRegistro.innerHTML;
+          nuevoEnlace.style.cssText = botonRegistro.style.cssText;
+          nuevoEnlace.style.textDecoration = 'none';
+          botonRegistro.parentNode.replaceChild(nuevoEnlace, botonRegistro);
+          console.log('🛠️ Se creó automáticamente el enlace de registro');
+        }
       }
-    });
+    }, 1000);
   </script>
 </body>
 </html>
