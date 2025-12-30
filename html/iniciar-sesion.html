@@ -210,46 +210,112 @@
   <script src="js/main.js"></script>
   
   <!-- Script específico para esta página -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const loginForm = document.getElementById('loginForm');
-      
-      if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-          e.preventDefault();
+ <!-- Cargar Supabase -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<script>
+  // Configurar Supabase
+  const SUPABASE_URL = 'https://grchvnewfkakaqfkgbzy.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_bQZ1guTH9D2ByDwgMYGLfQ_g7bIsktc';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('loginForm');
+    
+    if (loginForm) {
+      loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        
+        if (!email || !password) {
+          alert('Por favor, completa ambos campos.');
+          return;
+        }
+        
+        // Mostrar cargando
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '🔐 Verificando...';
+        submitBtn.disabled = true;
+        
+        try {
+          // 1. INICIAR SESIÓN CON SUPABASE AUTH
+          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+          });
           
-          const username = document.getElementById('username').value.trim();
-          const password = document.getElementById('password').value.trim();
-          
-          if (!username || !password) {
-            alert('Por favor, completa ambos campos.');
-            return;
+          if (authError) {
+            // Si falla, intentar con usuario demo
+            if (email === 'demo@cusco.com' && password === '123456') {
+              console.log('✅ Usando cuenta demo');
+              // Crear sesión simulada para demo
+              sessionStorage.setItem('user', JSON.stringify({
+                id: 'demo-123',
+                email: 'demo@cusco.com',
+                nombre: 'Usuario Demo'
+              }));
+              alert('✅ ¡Bienvenido Usuario Demo! (modo demostración)');
+              window.location.href = 'panel.html';
+              return;
+            }
+            throw authError;
           }
           
-          // Simulación de login exitoso
-          console.log('Intento de login:', { username, password });
+          console.log('✅ Login exitoso:', authData.user);
           
-          // Aquí iría la conexión real con Supabase
-          // Por ahora, simulamos éxito
-          alert('✅ ¡Inicio de sesión exitoso!\n\nEn una versión real, esto conectaría con Supabase Auth.');
+          // 2. OBTENER DATOS DEL USUARIO DESDE LA TABLA 'usuarios'
+          const { data: usuarioData, error: usuarioError } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('email', email)
+            .single();
           
-          // Redirigir al panel (puedes cambiar la página)
-          // window.location.href = 'panel.html';
+          // Guardar datos en sessionStorage
+          const userInfo = {
+            id: authData.user.id,
+            email: authData.user.email,
+            nombre: usuarioData?.nombre_completo || authData.user.email.split('@')[0],
+            dni: usuarioData?.dni || '',
+            rol: usuarioData?.rol || 'ciudadano'
+          };
           
-          // Opcional: Limpiar formulario
-          // loginForm.reset();
-        });
+          sessionStorage.setItem('user', JSON.stringify(userInfo));
+          
+          // 3. MOSTRAR BIENVENIDA PERSONALIZADA
+          alert(`✅ ¡Bienvenido ${userInfo.nombre}!`);
+          window.location.href = 'panel.html';
+          
+        } catch (error) {
+          console.error('❌ Error en login:', error);
+          
+          // Mensajes de error amigables
+          if (error.message.includes('Invalid login credentials')) {
+            alert('❌ Credenciales incorrectas. Usa:\nEmail: demo@cusco.com\nContraseña: 123456');
+          } else if (error.message.includes('Email not confirmed')) {
+            alert('❌ Confirma tu email primero');
+          } else {
+            alert(`❌ Error: ${error.message}`);
+          }
+          
+          // Restaurar botón
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+    }
+    
+    // Verificar si ya hay sesión activa
+    const user = sessionStorage.getItem('user');
+    if (user && window.location.pathname.includes('iniciar-sesion')) {
+      const userObj = JSON.parse(user);
+      if (confirm(`Ya hay una sesión activa como ${userObj.nombre}. ¿Ir al panel?`)) {
+        window.location.href = 'panel.html';
       }
-      
-      // Mensaje de bienvenida
-      console.log('Página de login cargada correctamente');
-      
-      // Verificar que el botón Registrarse funciona
-      const registroBtn = document.querySelector('.auth-btn-register');
-      if (registroBtn) {
-        console.log('Botón Registrarse encontrado, href:', registroBtn.href);
-      }
-    });
-  </script>
+    }
+  });
+</script>
 </body>
 </html>
