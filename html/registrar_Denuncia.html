@@ -354,7 +354,7 @@
         console.log('✅ Modales configurados');
       }
       
-     // ==================== CONFIGURAR FORMULARIO ====================
+// ==================== CONFIGURAR FORMULARIO (VERSIÓN CORREGIDA) ====================
 function configurarFormulario() {
   const form = document.getElementById('formDenuncia');
   const btnEnviar = document.getElementById('btnEnviar');
@@ -362,7 +362,7 @@ function configurarFormulario() {
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // Validar campos requeridos CON MEJOR FEEDBACK
+    // Validar campos requeridos
     const camposRequeridos = ['tipo_incidente', 'hechos', 'referencia', 'departamento', 'provincia', 'distrito'];
     let camposInvalidos = [];
     
@@ -371,8 +371,6 @@ function configurarFormulario() {
       if (!campo.value.trim()) {
         camposInvalidos.push(campoId);
         campo.style.borderColor = '#dc3545';
-        
-        // Restaurar color después de 3 segundos
         setTimeout(() => campo.style.borderColor = '', 3000);
       } else {
         campo.style.borderColor = '#28a745';
@@ -394,6 +392,41 @@ function configurarFormulario() {
     btnEnviar.disabled = true;
     
     try {
+      // ============ ¡¡¡ESTO ES LO MÁS IMPORTANTE!!! ============
+      // Recolectar datos de VÍCTIMA y DENUNCIADO
+      const datosVictima = {
+        nombre: document.getElementById('victima_nombre')?.value || '',
+        dni: document.getElementById('victima_dni')?.value || '',
+        telefono: document.getElementById('victima_telefono')?.value || ''
+      };
+      
+      const datosDenunciado = {
+        nombre: document.getElementById('denunciado_nombre')?.value || '',
+        dni: document.getElementById('denunciado_dni')?.value || '',
+        telefono: document.getElementById('denunciado_telefono')?.value || ''
+      };
+      
+      // Crear campos combinados para Supabase (opción 1 - campos separados)
+      const victimaTexto = datosVictima.nombre ? 
+        `${datosVictima.nombre}${datosVictima.dni ? ' | DNI: ' + datosVictima.dni : ''}${datosVictima.telefono ? ' | Tel: ' + datosVictima.telefono : ''}` : '';
+      
+      const denunciadoTexto = datosDenunciado.nombre ? 
+        `${datosDenunciado.nombre}${datosDenunciado.dni ? ' | DNI: ' + datosDenunciado.dni : ''}${datosDenunciado.telefono ? ' | Tel: ' + datosDenunciado.telefono : ''}` : '';
+      
+      // Obtener usuario de sesión
+      let usuarioEmail = 'anonimo@example.com';
+      let userId = null;
+      try {
+        const userData = sessionStorage.getItem('user');
+        if (userData) {
+          const usuario = JSON.parse(userData);
+          usuarioEmail = usuario.email || usuarioEmail;
+          userId = usuario.id || userId;
+        }
+      } catch (e) {
+        console.warn('No se pudo obtener usuario de sesión:', e);
+      }
+      
       // Preparar datos para Supabase
       const datosDenuncia = {
         titulo: document.getElementById('tipo_incidente').value,
@@ -409,13 +442,33 @@ function configurarFormulario() {
         coordenadas: coordenadasSeleccionadas ? 
           `${coordenadasSeleccionadas.lat}, ${coordenadasSeleccionadas.lng}` : null,
         creado_en: new Date().toISOString(),
-        tipo_formulario: 'denuncia'  // ← IMPORTANTE para diferenciar
+        tipo_formulario: 'denuncia',
+        
+        // ============ ¡¡¡NUEVOS CAMPOS CRÍTICOS!!! ============
+        victima: victimaTexto,  // Texto combinado de víctima
+        denunciado: denunciadoTexto,  // Texto combinado de denunciado
+        
+        // Campos individuales (opcional)
+        victima_nombre: datosVictima.nombre,
+        victima_dni: datosVictima.dni,
+        victima_telefono: datosVictima.telefono,
+        denunciado_nombre: datosDenunciado.nombre,
+        denunciado_dni: datosDenunciado.dni,
+        denunciado_telefono: datosDenunciado.telefono,
+        
+        // Metadata del usuario
+        usuario_email: usuarioEmail,
+        user_id: userId
       };
       
       console.log('📤 Enviando a Supabase:', datosDenuncia);
+      console.log('✅ Víctima:', datosDenuncia.victima);
+      console.log('✅ Denunciado:', datosDenuncia.denunciado);
+      
       errorHandler.registrar('formulario', null, { 
         accion: 'enviando_denuncia', 
-        datos: datosDenuncia 
+        tiene_victima: !!datosDenuncia.victima,
+        tiene_denunciado: !!datosDenuncia.denunciado
       });
       
       // ENVIAR A LA BASE DE DATOS
@@ -434,20 +487,38 @@ function configurarFormulario() {
       
       // ÉXITO
       console.log('✅ Denuncia guardada con ID:', data[0].id);
-      errorHandler.registrar('exito', null, { 
-        id_denuncia: data[0].id, 
-        tipo: 'denuncia' 
+      console.log('✅ Datos guardados:', {
+        victima: data[0].victima,
+        denunciado: data[0].denunciado
       });
       
-      // Mostrar mensaje de éxito CON ERROR HANDLER
+      errorHandler.registrar('exito', null, { 
+        id_denuncia: data[0].id, 
+        tipo: 'denuncia',
+        victima_guardada: !!data[0].victima,
+        denunciado_guardado: !!data[0].denunciado
+      });
+      
+      // Mostrar mensaje de éxito CON DETALLES
       errorHandler.mostrarUsuario(
-        { message: `Denuncia #${data[0].id} registrada exitosamente` }, 
+        { 
+          message: `Denuncia #${data[0].id} registrada exitosamente`,
+          detalles: datosDenuncia.victima ? 'Con datos de víctima y denunciado' : 'Sin datos personales'
+        }, 
         'success'
       );
       
       // Limpiar formulario
       form.reset();
       document.getElementById('fecha').valueAsDate = new Date();
+      
+      // Limpiar modales también
+      document.getElementById('victima_nombre').value = '';
+      document.getElementById('victima_dni').value = '';
+      document.getElementById('victima_telefono').value = '';
+      document.getElementById('denunciado_nombre').value = '';
+      document.getElementById('denunciado_dni').value = '';
+      document.getElementById('denunciado_telefono').value = '';
       
       // Limpiar mapa
       if (marcador) {
@@ -457,9 +528,9 @@ function configurarFormulario() {
       }
       
       // Redirigir después de 3 segundos (opcional)
-     // setTimeout(() => {
-       // window.location.href = 'consultas.html';
-      //}, 3000);
+    //  setTimeout(() => {
+    //    window.location.href = 'Estado_Reporte.html';
+    //  }, 3000);
       
     } catch (error) {
       // ERROR - USANDO ERROR HANDLER
@@ -478,7 +549,25 @@ function configurarFormulario() {
     }
   });
   
-  console.log('✅ Formulario configurado con manejo de errores');
+  console.log('✅ Formulario configurado con manejo de errores Y CAMPOS VÍCTIMA/DENUNCIADO');
+}
+    // Agrega esto después de configurarFormulario()
+function mostrarResumenAntesDeEnviar() {
+  const btnEnviar = document.getElementById('btnEnviar');
+  
+  btnEnviar.addEventListener('click', function(e) {
+    // Solo si no es submit (preventivo)
+    if (e.target.type !== 'submit') {
+      const victima = document.getElementById('victima_nombre')?.value;
+      const denunciado = document.getElementById('denunciado_nombre')?.value;
+      
+      if (victima || denunciado) {
+        console.log('📝 Resumen antes de enviar:');
+        console.log('  Víctima:', victima || 'No especificada');
+        console.log('  Denunciado:', denunciado || 'No especificado');
+      }
+    }
+  });
 }
       
       // ==================== CONFIGURAR LOGOUT ====================
@@ -518,6 +607,9 @@ document.getElementById("logoutBtn").addEventListener("click", async function() 
         
         // 4. Configurar formulario
         configurarFormulario();
+        
+        // 5. Configurar resumen
+        mostrarResumenAntesDeEnviar();
         
         console.log('✅ Aplicación completamente inicializada');
       }
