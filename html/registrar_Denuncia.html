@@ -237,27 +237,29 @@
   </div>
 
   <!-- MODALES -->
-  <div class="modal" id="modalVictima">
-    <div class="modal-content">
-      <span class="close-modal" id="closeVictima">&times;</span>
-      <h3><i class="fa-solid fa-user-injured"></i> Datos de la víctima (opcional)</h3>
-      <input type="text" id="victima_nombre" placeholder="Nombre completo"><br><br>
-      <input type="text" id="victima_dni" placeholder="DNI"><br><br>
-      <input type="text" id="victima_telefono" placeholder="Teléfono"><br><br>
-      <button type="button" class="btn-secundario" onclick="document.getElementById('modalVictima').style.display='none'" style="width:100%;">Guardar y cerrar</button>
-    </div>
+<!-- MODAL VÍCTIMA - MODIFICADO -->
+<div class="modal" id="modalVictima">
+  <div class="modal-content">
+    <span class="close-modal" id="closeVictima">&times;</span>
+    <h3><i class="fa-solid fa-user-injured"></i> Datos de la víctima (opcional)</h3>
+    <input type="text" id="victima_nombre" name="victima_nombre" placeholder="Nombre completo"><br><br>
+    <input type="text" id="victima_dni" name="victima_dni" placeholder="DNI"><br><br>
+    <input type="text" id="victima_telefono" name="victima_telefono" placeholder="Teléfono"><br><br>
+    <button type="button" class="btn-secundario" onclick="document.getElementById('modalVictima').style.display='none'" style="width:100%;">Guardar y cerrar</button>
   </div>
+</div>
 
-  <div class="modal" id="modalDenunciado">
-    <div class="modal-content">
-      <span class="close-modal" id="closeDenunciado">&times;</span>
-      <h3><i class="fa-solid fa-user-police"></i> Datos del denunciado (opcional)</h3>
-      <input type="text" id="denunciado_nombre" placeholder="Nombre completo"><br><br>
-      <input type="text" id="denunciado_dni" placeholder="DNI"><br><br>
-      <input type="text" id="denunciado_telefono" placeholder="Teléfono"><br><br>
-      <button type="button" class="btn-secundario" onclick="document.getElementById('modalDenunciado').style.display='none'" style="width:100%;">Guardar y cerrar</button>
-    </div>
+<!-- MODAL DENUNCIADO - MODIFICADO -->
+<div class="modal" id="modalDenunciado">
+  <div class="modal-content">
+    <span class="close-modal" id="closeDenunciado">&times;</span>
+    <h3><i class="fa-solid fa-user-police"></i> Datos del denunciado (opcional)</h3>
+    <input type="text" id="denunciado_nombre" name="denunciado_nombre" placeholder="Nombre completo"><br><br>
+    <input type="text" id="denunciado_dni" name="denunciado_dni" placeholder="DNI"><br><br>
+    <input type="text" id="denunciado_telefono" name="denunciado_telefono" placeholder="Teléfono"><br><br>
+    <button type="button" class="btn-secundario" onclick="document.getElementById('modalDenunciado').style.display='none'" style="width:100%;">Guardar y cerrar</button>
   </div>
+</div>
 
   <!-- SCRIPTS EN ORDEN CORRECTO -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -455,9 +457,9 @@ function configurarFormulario() {
       }
       
       // Redirigir después de 3 segundos (opcional)
-      setTimeout(() => {
-        window.location.href = 'consultas.html';
-      }, 3000);
+     // setTimeout(() => {
+       // window.location.href = 'consultas.html';
+      //}, 3000);
       
     } catch (error) {
       // ERROR - USANDO ERROR HANDLER
