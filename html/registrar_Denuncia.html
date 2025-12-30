@@ -282,9 +282,10 @@
       try {
         supabase = window.supabaseLib.createClient(SUPABASE_URL, SUPABASE_KEY);
         console.log('✅ Supabase configurado correctamente');
+      // DESPUÉS:
       } catch (error) {
-        console.error('❌ Error creando cliente Supabase:', error);
-        alert('Error en la configuración de la base de datos.');
+        errorHandler.registrar('supabase_init', error, { accion: 'crear_cliente' });
+        errorHandler.mostrarUsuario(error, 'error');
         return;
       }
       
@@ -323,11 +324,13 @@
           });
           
           console.log('✅ Mapa inicializado');
-        } catch (error) {
-          console.error('❌ Error inicializando mapa:', error);
-          document.getElementById('mapContainer').innerHTML = 
-            '<p style="color:red; padding:20px;">Error al cargar el mapa. Verifica tu conexión.</p>';
-        }
+              } catch (error) {
+        errorHandler.registrar('mapa', error, { modulo: 'leaflet' });
+        errorHandler.mostrarUsuario(
+          { message: 'Error al cargar el mapa. Funcionalidad limitada.' }, 
+          'warning'
+        );
+      }
       }
       
       // ==================== CONFIGURAR MODALES ====================
@@ -349,101 +352,156 @@
         console.log('✅ Modales configurados');
       }
       
-      // ==================== CONFIGURAR FORMULARIO ====================
-      function configurarFormulario() {
-        const form = document.getElementById('formDenuncia');
-        const btnEnviar = document.getElementById('btnEnviar');
+     // ==================== CONFIGURAR FORMULARIO ====================
+function configurarFormulario() {
+  const form = document.getElementById('formDenuncia');
+  const btnEnviar = document.getElementById('btnEnviar');
+  
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Validar campos requeridos CON MEJOR FEEDBACK
+    const camposRequeridos = ['tipo_incidente', 'hechos', 'referencia', 'departamento', 'provincia', 'distrito'];
+    let camposInvalidos = [];
+    
+    for (const campoId of camposRequeridos) {
+      const campo = document.getElementById(campoId);
+      if (!campo.value.trim()) {
+        camposInvalidos.push(campoId);
+        campo.style.borderColor = '#dc3545';
         
-        form.addEventListener('submit', async function(e) {
-          e.preventDefault();
-          
-          // Validar campos requeridos
-          const camposRequeridos = ['tipo_incidente', 'hechos', 'referencia', 'departamento', 'provincia', 'distrito'];
-          for (const campoId of camposRequeridos) {
-            const campo = document.getElementById(campoId);
-            if (!campo.value.trim()) {
-              alert(`Por favor completa el campo: ${campo.previousElementSibling.textContent}`);
-              campo.focus();
-              return;
-            }
-          }
-          
-          // Cambiar estado del botón
-          const textoOriginal = btnEnviar.innerHTML;
-          btnEnviar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
-          btnEnviar.disabled = true;
-          
-          try {
-            // Preparar datos para Supabase
-            const datosDenuncia = {
-              titulo: document.getElementById('tipo_incidente').value,
-              descripcion: document.getElementById('hechos').value,
-              categoria: 'Tránsito',
-              estado: 'pendiente',
-              ubicacion: document.getElementById('referencia').value,
-              departamento: document.getElementById('departamento').value,
-              provincia: document.getElementById('provincia').value,
-              distrito: document.getElementById('distrito').value,
-              prioridad: document.getElementById('prioridad').value,
-              fecha_incidente: document.getElementById('fecha').value,
-              coordenadas: coordenadasSeleccionadas ? 
-                `${coordenadasSeleccionadas.lat}, ${coordenadasSeleccionadas.lng}` : null,
-              creado_en: new Date().toISOString()
-            };
-            
-            console.log('📤 Enviando a Supabase:', datosDenuncia);
-            
-            // ENVIAR A LA BASE DE DATOS
-            const { data, error } = await supabase
-              .from('denuncias')
-              .insert([datosDenuncia])
-              .select();
-            
-            if (error) {
-              throw new Error(`Error de base de datos: ${error.message}`);
-            }
-            
-            // ÉXITO
-            console.log('✅ Denuncia guardada con ID:', data[0].id);
-            
-            // Mostrar mensaje de éxito
-            alert(`✅ ¡Denuncia registrada exitosamente!\n\nNúmero de seguimiento: CR-${data[0].id}\nPuedes ver el estado en la página de consultas.`);
-            
-            // Limpiar formulario
-            form.reset();
-            document.getElementById('fecha').valueAsDate = new Date();
-            
-            // Limpiar mapa
-            if (marcador) {
-              map.removeLayer(marcador);
-              marcador = null;
-              coordenadasSeleccionadas = null;
-            }
-            
-            // Redirigir después de 2 segundos
-            setTimeout(() => {
-              window.location.href = 'consultas.html';
-            }, 2000);
-            
-          } catch (error) {
-            console.error('❌ Error al enviar:', error);
-            alert(`❌ Error al registrar la denuncia:\n${error.message}`);
-            
-            // Restaurar botón
-            btnEnviar.innerHTML = textoOriginal;
-            btnEnviar.disabled = false;
-          }
+        // Restaurar color después de 3 segundos
+        setTimeout(() => campo.style.borderColor = '', 3000);
+      } else {
+        campo.style.borderColor = '#28a745';
+      }
+    }
+    
+    if (camposInvalidos.length > 0) {
+      errorHandler.mostrarUsuario(
+        { message: `Completa ${camposInvalidos.length} campo(s) obligatorio(s)` }, 
+        'warning'
+      );
+      document.getElementById(camposInvalidos[0]).focus();
+      return;
+    }
+    
+    // Cambiar estado del botón
+    const textoOriginal = btnEnviar.innerHTML;
+    btnEnviar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+    btnEnviar.disabled = true;
+    
+    try {
+      // Preparar datos para Supabase
+      const datosDenuncia = {
+        titulo: document.getElementById('tipo_incidente').value,
+        descripcion: document.getElementById('hechos').value,
+        categoria: 'Tránsito',
+        estado: 'pendiente',
+        ubicacion: document.getElementById('referencia').value,
+        departamento: document.getElementById('departamento').value,
+        provincia: document.getElementById('provincia').value,
+        distrito: document.getElementById('distrito').value,
+        prioridad: document.getElementById('prioridad').value,
+        fecha_incidente: document.getElementById('fecha').value,
+        coordenadas: coordenadasSeleccionadas ? 
+          `${coordenadasSeleccionadas.lat}, ${coordenadasSeleccionadas.lng}` : null,
+        creado_en: new Date().toISOString(),
+        tipo_formulario: 'denuncia'  // ← IMPORTANTE para diferenciar
+      };
+      
+      console.log('📤 Enviando a Supabase:', datosDenuncia);
+      errorHandler.registrar('formulario', null, { 
+        accion: 'enviando_denuncia', 
+        datos: datosDenuncia 
+      });
+      
+      // ENVIAR A LA BASE DE DATOS
+      const { data, error } = await supabase
+        .from('denuncias')
+        .insert([datosDenuncia])
+        .select();
+      
+      if (error) {
+        errorHandler.registrar('supabase_insert', error, { 
+          tabla: 'denuncias', 
+          datos: datosDenuncia 
         });
-        
-        console.log('✅ Formulario configurado');
+        throw new Error(`Error de base de datos: ${error.message}`);
       }
       
-      // ==================== CONFIGURAR LOGOUT ====================
-      document.getElementById("logoutBtn").addEventListener("click", function() {
-        if (confirm("¿Estás seguro de cerrar sesión?")) {
-          window.location.href = "index.html";
-        }
+      // ÉXITO
+      console.log('✅ Denuncia guardada con ID:', data[0].id);
+      errorHandler.registrar('exito', null, { 
+        id_denuncia: data[0].id, 
+        tipo: 'denuncia' 
       });
+      
+      // Mostrar mensaje de éxito CON ERROR HANDLER
+      errorHandler.mostrarUsuario(
+        { message: `Denuncia #${data[0].id} registrada exitosamente` }, 
+        'success'
+      );
+      
+      // Limpiar formulario
+      form.reset();
+      document.getElementById('fecha').valueAsDate = new Date();
+      
+      // Limpiar mapa
+      if (marcador) {
+        map.removeLayer(marcador);
+        marcador = null;
+        coordenadasSeleccionadas = null;
+      }
+      
+      // Redirigir después de 3 segundos (opcional)
+      setTimeout(() => {
+        window.location.href = 'consultas.html';
+      }, 3000);
+      
+    } catch (error) {
+      // ERROR - USANDO ERROR HANDLER
+      errorHandler.registrar('exception', error, { 
+        modulo: 'formulario_denuncia', 
+        accion: 'submit' 
+      });
+      
+      // Mostrar error apropiado al usuario
+      errorHandler.mostrarUsuario(error, 'error');
+      
+    } finally {
+      // Siempre restaurar botón
+      btnEnviar.innerHTML = textoOriginal;
+      btnEnviar.disabled = false;
+    }
+  });
+  
+  console.log('✅ Formulario configurado con manejo de errores');
+}
+      
+      // ==================== CONFIGURAR LOGOUT ====================
+document.getElementById("logoutBtn").addEventListener("click", async function() {
+  if (confirm("¿Estás seguro de cerrar sesión?")) {
+    try {
+      // Intentar cerrar sesión en Supabase
+      await supabase.auth.signOut();
+      errorHandler.registrar('sesion', null, { accion: 'logout_exitoso' });
+    } catch (error) {
+      errorHandler.registrar('sesion', error, { accion: 'logout_error' });
+    }
+    
+    // Limpiar sesión local
+    sessionStorage.removeItem('user');
+    errorHandler.mostrarUsuario(
+      { message: 'Sesión cerrada correctamente' }, 
+      'success'
+    );
+    
+    setTimeout(() => {
+      window.location.href = "index.html";
+    }, 1500);
+  }
+});
       
       // ==================== INICIALIZAR TODO ====================
       function inicializarTodo() {
